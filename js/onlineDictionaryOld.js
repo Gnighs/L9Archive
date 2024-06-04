@@ -2,46 +2,31 @@ function displayWord(){
     const word = document.getElementById("searchedWord").value.toLowerCase();
     if(word == '' || !(word in dictionary)) return;
     document.getElementById("selectedWord").innerHTML = word;
-    document.getElementById("entries").innerHTML = "";
-
-    let lahapek = "<p><strong>Lahapek spelling: </strong>" + word + "</p>";
-    let mainIPA = "";
-    let newEntry = "";
-    let count = 1;
-
-    for(e of dictionary[word]){
-        //if it is an added meaning
-        if(e[4] == ''){
-            newEntry += "<p><strong>" + e[3] + " </strong>";
-            if(e[1] != '' && e[1] != mainIPA) newEntry += " <em class='normalFont'>/" + e[1] + "/</em> ";
-            newEntry += CSVBasedintoHTMLbased(e[7]) + "</p>";
-        }
-        else{
-            console.log(newEntry);
-            if(newEntry != ""){
-                if(count == 1) newEntry = "<section><h2>Entry 1</h2>\n" + newEntry /*add any tables here*/ + "</section>";
-                else newEntry += /*add any tables here*/ "</section>";
-                count += 1;
-                newEntry += "<section><h2>Entry " + count + "</h2>";
-            }
-            let ippek = "<p><strong>Ippek spelling: </strong>" + e[0] + "</p>";
-            let ipa = "<p><strong>Pronunciation: </strong><em class='normalFont'>/" + e[1] + "/</em></p>";
-            mainIPA = e[1];
-            let etymology = "<p><strong>Etymology: </strong> " + CSVBasedintoHTMLbased(e[4]) + "</p>";
-            if(e[5] != ''){
-                etymology = "<p><strong>Etymology: </strong> From " + e[4]
-                + " <em class='normalFont'>/" + e[5] + "/</em> meaning <em>" + e[6] + "</em>" + "</p>";
-            }
-            let meaning = "<p><strong>" + e[3] + " </strong>";
-            if(e[1] != '' && e[1] != mainIPA) meaning += " <em class='normalFont'>/" + e[1] + "/</em> ";
-            meaning += CSVBasedintoHTMLbased(e[7]) + "</p>";
-            newEntry += lahapek + "\n" + ippek + "\n" + ipa + "\n" + etymology + "\n<br>" + meaning;
-        }
+    document.getElementById("lahapek").innerHTML = "<strong>Lahapek spelling: </strong>" + word;
+    document.getElementById("ippek").innerHTML = "<strong>Ippek spelling: </strong>" + dictionary[word][1];
+    document.getElementById("ipa").innerHTML = "<strong>Pronunciation: </strong>/" + dictionary[word][2] + "/";
+    //document.getElementById("LasailtiIpa").innerHTML = "<strong>Lasailti dialect: </strong>/" + getAnyPronunciation(word,rulesLasailti) + "/";
+    
+    if(dictionary[word][0] == "\\entry"){
+        document.getElementById("etymology").innerHTML = "<strong>Etymology: </strong> From " + dictionary[word][4]
+        + " <em class='normalFont'>/" + dictionary[word][5] + "/</em> meaning <em>" + dictionary[word][6] + "</em>";
     }
-    newEntry += /*add any tables here*/ "</section>";
-    document.getElementById("entries").innerHTML += newEntry;
+    else if(dictionary[word][0] == "\\entryNoMeaning"){
+        document.getElementById("etymology").innerHTML = "<strong>Etymology: </strong> From " + dictionary[word][4]
+        + " <em>" + dictionary[word][5] + "</em>";
+    }
+    else if(dictionary[word][0] == "\\entryUnkownOrigin"){
+        document.getElementById("etymology").innerHTML = "<strong>Etymology: </strong> of unknown origin";
+    }
+    else if(dictionary[word][0] == "\\entryFreeEtymology"){
+        document.getElementById("etymology").innerHTML = "<strong>Etymology: </strong> "
+        + CSVBasedintoHTMLbased(dictionary[word][4]);
+    }
 
-    /*if(dictionary[word][3].includes(" v.")){
+    document.getElementById("meaning").innerHTML = "<br><strong>" + dictionary[word][3] + " </strong>"
+     + CSVBasedintoHTMLbased(dictionary[word][dictionary[word].length-1]);
+
+     if(dictionary[word][3].includes(" v.")){
         conjugateVerb();
         document.getElementById("conjugationButton").style.display = "inline-block";
      }
@@ -59,41 +44,14 @@ function displayWord(){
      if(["n.","adj.","det."].includes(dictionary[word][3])){
         document.getElementById("conjugationButton").style.display = "inline-block";
         document.getElementById("verbTables").innerHTML = displayDeclensions(word,dictionary[word][2]);
-     }*/
+     }
     // document.getElementById("reduplicatedForm").innerHTML = "<strong>Reduplicated form: none</strong>";
 }
 
 function CSVBasedintoHTMLbased(string){
-    let parts = string.split(/(\*\*.*?\*\*)/);
-    let editedString = parts.map(part => {
-        if (part.startsWith('*') && part.endsWith('*')) {
-            return `<strong>${part.substring(1, part.length - 1)}</strong>`;
-        }
-        return part;
-    }).join('');
-
-    parts = editedString.split(/(\*.*?\*)/);
-    editedString = parts.map(part => {
-        if (part.startsWith('*') && part.endsWith('*')) {
-            return `<em>${part.substring(1, part.length - 1)}</em>`;
-        }
-        return part;
-    }).join('');
-
-    parts = editedString.split(/(\/.*?\/)/);
-    editedString = parts.map(part => {
-        if (part.startsWith('/') && part.endsWith('/')) {
-            return `<em class='normalFont'>${part.substring(1, part.length - 1)}</em>`;
-        }
-        return part;
-    }).join('');
-
-    //let editedString = string.replace(/\*\*(.*)\*\*/g, '<strong>$1</strong>');
-    //editedString = editedString.replace(/\*(.*)\*/g, '<em>$1</em>');
-    //editedString = editedString.replace(/\/(.*)\//g, "<em class='normalFont'>/$1/</em>");
-    
-    //editedString = editedString.replace(/\\continue{([^}]*)}{([^}]*)}{([^}]*)}/, '<br><strong>$1</strong> /$2/ $3');
-    //editedString = editedString.replace(/\\continue{([^}]*)}{([^}]*)}/, '<br><strong>$1</strong> $2');
+    let editedString = string.replace(/\\textit{([^}]+)}/g, '<em>$1</em>');
+    editedString = editedString.replace(/\\textbf{([^}]+)}/g, '<strong>$1</strong>');
+    editedString = editedString.replace(/\\continue{([^}]*)}{([^}]*)}/, '<br><strong>$1</strong> $2');
     //editedString = editedString.replace(/\/([^\/]*)\//g, '<em class="normalFont">/$1/</em>');
     return editedString;
 }

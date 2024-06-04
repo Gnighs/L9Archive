@@ -1,4 +1,4 @@
-var verbsAndGroup = {
+/*var verbsAndGroup = {
     "ahakal":"1.3",
     "ajul":"3.1",
     "epal":"1.3",
@@ -93,5 +93,6 @@ var verbsAndGroup = {
     "upalil": ["\\entry", "baju", "'bəju", "2 v.", "Parkjol Saspine", "upali wel", "arrive action", "To arrive. To come. To achieve. To reach."],
     "utijota": ["\\entryNoMeaning", "dijota", "d͡zi'jɔtə", "n.", "Shasvin", "uti- + jota", "", "Female genitalia. \\continue{exc.}{\"F*ck!\" \"Damn it!\" and similar.}"]
     }
-
+*/
+var dictionary = {}
     

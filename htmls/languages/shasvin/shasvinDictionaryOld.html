@@ -85,16 +85,19 @@
                 <input type="submit" onclick="return displayWord()">
             </form>
             <h1 id="selectedWord"></h1>
-            <section id="entries">
-
-            </section>
-            
-            <!--button id="conjugationButton" style="display: none;">Show all forms</button>
+            <p id="lahapek"></p>
+            <p id="ippek"></p>
+            <p id="ipa" class="normalFont"></p>
+            <!--p id="LasailtiIpa" class="normalFont"></p-->
+            <!--p id="wordClass"></p-->
+            <p id="etymology" class="etymology"></p>
+            <p id="meaning"></p>
+            <button id="conjugationButton" style="display: none;">Show all forms</button>
             <section id="verbConjugationDropDown" style="display: none;">
                 <h1 id="VerbAndGroup"></h1>
                 <p id="reduplicatedForm"></p>
                 <div id="verbTables" class="verbTables"></div>
-            </section-->
+            </section>
             
             
         </section>
@@ -113,7 +116,7 @@
         autocomplete(document.getElementById("searchedWord"), dictionary);
     </script>
     <script src="../../../js/navlinks.js"></script>
-    <!--script>
+    <script>
         // Get references to the button and the div containing the content
         var toggleButton = document.getElementById("conjugationButton");
         var verbTablesDiv = document.getElementById("verbConjugationDropDown");
@@ -129,6 +132,6 @@
                 toggleButton.innerHTML = "Show all forms";
             }
         });
-    </script-->
+    </script>
 </body>
 </html>
