@@ -183,9 +183,7 @@ h2 {
 }
 
 .section-grid {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: calc((100% - 42px) / 4);
+  display: flex;
   gap: 14px;
   max-width: 100%;
   overflow-x: auto;
@@ -213,6 +211,7 @@ h2 {
 
 .section-card {
   display: grid;
+  flex: 0 0 calc((100% - 42px) / 4);
   gap: 14px;
   min-width: 0;
   min-height: 230px;
@@ -391,7 +390,11 @@ h2 {
   }
 
   .section-grid {
-    grid-auto-columns: min(320px, 72vw);
+    gap: 12px;
+  }
+
+  .section-card {
+    flex-basis: min(320px, 72vw);
   }
 
   .document-row {
@@ -497,9 +500,6 @@ h2 {
   }
 
   .section-grid {
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(0, calc(100vw - 42px));
-    grid-template-columns: none;
     gap: 10px;
     max-width: 100%;
     overflow-x: auto;
@@ -509,6 +509,7 @@ h2 {
   }
 
   .section-card {
+    flex-basis: calc(100vw - 42px);
     gap: 6px 10px;
     min-height: 0;
     padding: 12px;
