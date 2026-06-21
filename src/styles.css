@@ -129,11 +129,12 @@ h2 {
 }
 
 .header-copy {
-  max-width: 690px;
+  max-width: 980px;
   margin-bottom: 0;
   color: var(--muted);
   font-size: 1rem;
   line-height: 1.6;
+  white-space: nowrap;
 }
 
 .archive-shell {
@@ -241,6 +242,10 @@ h2 {
   padding: 20px;
 }
 
+.document-panel[hidden] {
+  display: none;
+}
+
 .ghost-button {
   min-height: 42px;
   padding: 0 14px;
@@ -324,7 +329,20 @@ h2 {
   line-height: 1.55;
 }
 
+.maintenance-notice.neutral {
+  border-color: rgba(110, 207, 176, 0.35);
+  background: rgba(7, 17, 15, 0.42);
+}
+
+.maintenance-notice.neutral span {
+  color: var(--line-bright);
+}
+
 @media (max-width: 980px) {
+  .header-copy {
+    white-space: normal;
+  }
+
   .section-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

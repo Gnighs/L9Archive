@@ -1,11 +1,11 @@
 import { archiveManifest } from "./archive-manifest.js";
 
 const sectionGrid = document.querySelector("#section-grid");
+const documentPanel = document.querySelector("#document-panel");
 const documentList = document.querySelector("#document-list");
 const documentsTitle = document.querySelector("#documents-title");
 const activeSectionKicker = document.querySelector("#active-section-kicker");
 const generationStamp = document.querySelector("#generation-stamp");
-const showAllButton = document.querySelector("#show-all");
 
 const sections = archiveManifest.sections;
 let activeSectionId = getInitialSectionId();
@@ -14,7 +14,7 @@ function getInitialSectionId() {
   const hash = window.location.hash.replace(/^#/, "");
   if (sections.some((section) => section.id === hash)) return hash;
 
-  return sections.find((section) => section.count > 0)?.id ?? sections[0]?.id ?? null;
+  return null;
 }
 
 function formatTimestamp(value) {
@@ -37,12 +37,12 @@ function renderSections() {
       button.dataset.active = section.id === activeSectionId ? "true" : "false";
       button.setAttribute("aria-pressed", section.id === activeSectionId ? "true" : "false");
 
-      const status = section.status === "available" ? `${section.count} document${section.count === 1 ? "" : "s"}` : section.maintenanceLine;
+      const status = section.status === "available" ? `${section.count} file${section.count === 1 ? "" : "s"} indexed` : section.maintenanceLine;
 
       button.innerHTML = `
         <span class="card-topline">
           <span>${section.id.toUpperCase()}</span>
-          <span>${section.status === "available" ? "OPEN" : "MAINT"}</span>
+          <span>${section.status === "available" ? "FOLDER" : "MAINT"}</span>
         </span>
         <strong>${section.title}</strong>
         <span class="card-copy">${section.description}</span>
@@ -94,12 +94,12 @@ function renderDocuments() {
   const activeSection = sections.find((section) => section.id === activeSectionId);
 
   if (!activeSection) {
-    documentsTitle.textContent = "Documents";
-    activeSectionKicker.textContent = "Selected Index";
+    documentPanel.hidden = true;
     documentList.replaceChildren();
     return;
   }
 
+  documentPanel.hidden = false;
   documentsTitle.textContent = activeSection.title;
   activeSectionKicker.textContent = activeSection.status === "available" ? "Open Index" : "Restricted Index";
 
@@ -113,30 +113,10 @@ function renderDocuments() {
   );
 }
 
-function renderAllDocuments() {
-  activeSectionId = null;
-  window.history.replaceState(null, "", window.location.pathname);
-  documentsTitle.textContent = "All Open Documents";
-  activeSectionKicker.textContent = "Public Index";
-
-  const rows = sections.flatMap((section) =>
-    section.documents.map((document) => documentRow(document, section))
-  );
-
-  if (rows.length === 0) {
-    documentList.replaceChildren();
-  } else {
-    documentList.replaceChildren(...rows);
-  }
-
-  renderSections();
-}
-
 function render() {
   renderSections();
   renderDocuments();
 }
 
 generationStamp.textContent = formatTimestamp(archiveManifest.generatedAt);
-showAllButton.addEventListener("click", renderAllDocuments);
 render();
