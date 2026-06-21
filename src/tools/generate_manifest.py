@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+from urllib.parse import quote
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SRC_DIR = SCRIPT_DIR.parent
+PROJECT_ROOT = SRC_DIR.parent
+DOCUMENTS_DIR = PROJECT_ROOT / "documents"
+OUTPUT_PATH = SRC_DIR / "archive-manifest.js"
+
+SECTION_DESCRIPTIONS = {
+    "languages": "Reference grammars, lexicons, scripts, and linguistic survey material.",
+    "biology": "Xenobiological field reports, anatomical plates, and ecological notes.",
+    "cultures": "Ethnographic dossiers, settlement records, ritual notes, and political briefs.",
+    "miscellany": "Unsorted transmissions, partial records, and recovered archival fragments.",
+}
+
+MAINTENANCE_LINES = [
+    "INDEX UNDER MAINTENANCE",
+    "CATALOG RECONCILIATION IN PROGRESS",
+    "AWAITING CURATORIAL CLEARANCE",
+    "RECORDS PENDING STATION INTAKE",
+]
+
+
+def title_from_slug(value):
+    normalized = value.replace("-", " ").replace("_", " ")
+    return " ".join(word.capitalize() for word in normalized.split())
+
+
+def title_from_pdf(path):
+    return title_from_slug(path.stem)
+
+
+def station_id(section_name, relative_path):
+    raw = f"{section_name}/{relative_path.with_suffix('')}"
+    clean = []
+    previous_dash = False
+
+    for char in raw:
+        if char.isalnum():
+            clean.append(char.upper())
+            previous_dash = False
+        elif not previous_dash:
+            clean.append("-")
+            previous_dash = True
+
+    return f"L9-{''.join(clean).strip('-')}"
+
+
+def href_for(section_name, relative_path):
+    parts = ["..", "documents", section_name, *relative_path.parts]
+    return "/".join(part if part == ".." else quote(part) for part in parts)
+
+
+def collect_pdfs(section_path):
+    return sorted(
+        (
+            path.relative_to(section_path)
+            for path in section_path.rglob("*")
+            if path.is_file() and not any(part.startswith(".") for part in path.parts) and path.suffix.lower() == ".pdf"
+        ),
+        key=lambda path: str(path).lower(),
+    )
+
+
+def build_manifest():
+    folders = sorted(
+        path for path in DOCUMENTS_DIR.iterdir()
+        if path.is_dir() and not path.name.startswith(".")
+    )
+    sections = []
+
+    for index, folder in enumerate(folders):
+        pdfs = collect_pdfs(folder)
+        documents = [
+            {
+                "id": station_id(folder.name, relative_path),
+                "title": title_from_pdf(relative_path),
+                "fileName": relative_path.name,
+                "href": href_for(folder.name, relative_path),
+                "path": f"documents/{folder.name}/{relative_path.as_posix()}",
+            }
+            for relative_path in pdfs
+        ]
+
+        sections.append({
+            "id": folder.name,
+            "title": title_from_slug(folder.name),
+            "description": SECTION_DESCRIPTIONS.get(
+                folder.name,
+                "Station records filed under a newly opened archive heading.",
+            ),
+            "status": "available" if documents else "maintenance",
+            "maintenanceLine": MAINTENANCE_LINES[index % len(MAINTENANCE_LINES)],
+            "count": len(documents),
+            "documents": documents,
+        })
+
+    return {
+        "station": "Orbital Archive Station L-9",
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "sections": sections,
+    }
+
+
+def main():
+    manifest = build_manifest()
+    OUTPUT_PATH.write_text(
+        f"export const archiveManifest = {json.dumps(manifest, indent=2)};\n",
+        encoding="utf-8",
+    )
+    print(f"Generated {OUTPUT_PATH.relative_to(PROJECT_ROOT)} with {len(manifest['sections'])} sections.")
+
+
+if __name__ == "__main__":
+    main()

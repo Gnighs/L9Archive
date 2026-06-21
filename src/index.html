@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#09110f">
+    <title>Orbital Archive Station L-9</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <div class="scanline" aria-hidden="true"></div>
+
+    <header class="station-header">
+      <div class="station-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div>
+        <p class="eyebrow">Public Access Terminal</p>
+        <h1>Orbital Archive Station L-9</h1>
+        <p class="header-copy">
+          Indexed records from the L-9 long-orbit archive. Civilian viewing clearance is active for open documents.
+        </p>
+      </div>
+    </header>
+
+    <main class="archive-shell">
+      <section class="status-panel" aria-label="Station status">
+        <div>
+          <span class="status-label">Archive Link</span>
+          <strong>Stable</strong>
+        </div>
+        <div>
+          <span class="status-label">Clearance</span>
+          <strong>Public</strong>
+        </div>
+        <div>
+          <span class="status-label">Index Mode</span>
+          <strong>Auto-scan</strong>
+        </div>
+      </section>
+
+      <section aria-labelledby="sections-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Directory</p>
+            <h2 id="sections-title">Archive Sections</h2>
+          </div>
+          <p id="generation-stamp" class="generation-stamp"></p>
+        </div>
+        <div id="section-grid" class="section-grid"></div>
+      </section>
+
+      <section class="document-panel" aria-labelledby="documents-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" id="active-section-kicker">Selected Index</p>
+            <h2 id="documents-title">Documents</h2>
+          </div>
+          <button id="show-all" class="ghost-button" type="button">Show all</button>
+        </div>
+        <div id="document-list" class="document-list"></div>
+      </section>
+    </main>
+  </body>
+</html>
