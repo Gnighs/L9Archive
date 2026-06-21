@@ -16,6 +16,12 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
@@ -51,6 +57,7 @@ a {
 .archive-shell {
   width: min(1180px, calc(100% - 32px));
   margin-inline: auto;
+  min-width: 0;
 }
 
 .station-header {
@@ -180,6 +187,7 @@ h2 {
   grid-auto-flow: column;
   grid-auto-columns: calc((100% - 42px) / 4);
   gap: 14px;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0 0 12px;
@@ -206,6 +214,7 @@ h2 {
 .section-card {
   display: grid;
   gap: 14px;
+  min-width: 0;
   min-height: 230px;
   padding: 18px;
   border: 1px solid var(--line);
@@ -403,7 +412,8 @@ h2 {
 
   .station-header,
   .archive-shell {
-    width: min(100% - 20px, 1180px);
+    width: calc(100% - 20px);
+    max-width: calc(100vw - 20px);
   }
 
   .station-header {
@@ -429,8 +439,9 @@ h2 {
   h1 {
     max-width: 100%;
     margin-bottom: 8px;
-    font-size: 2rem;
+    font-size: 1.72rem;
     line-height: 1;
+    overflow-wrap: anywhere;
   }
 
   h2 {
@@ -457,18 +468,15 @@ h2 {
   }
 
   .status-panel {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .status-panel > div {
     gap: 4px;
-    padding: 10px 8px;
-    border-bottom: 0;
+    min-width: 0;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
     border-right: 0;
-    border-left: 1px solid var(--line);
-  }
-
-  .status-panel > div:first-child {
     border-left: 0;
   }
 
@@ -489,21 +497,22 @@ h2 {
   }
 
   .section-grid {
-    grid-auto-flow: row;
-    grid-auto-columns: unset;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    overflow: visible;
-    padding-bottom: 0;
-    scroll-snap-type: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, calc(100vw - 42px));
+    grid-template-columns: none;
+    gap: 10px;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 10px;
+    scroll-snap-type: inline mandatory;
   }
 
   .section-card {
-    grid-template-columns: minmax(0, 1fr) auto;
     gap: 6px 10px;
     min-height: 0;
     padding: 12px;
-    scroll-snap-align: none;
+    scroll-snap-align: start;
   }
 
   .card-topline,
@@ -531,10 +540,12 @@ h2 {
   }
 
   .document-panel {
+    min-width: 0;
     padding: 12px;
   }
 
   .document-row {
+    min-width: 0;
     grid-template-columns: 1fr;
     align-items: start;
     min-height: 0;
@@ -555,6 +566,7 @@ h2 {
   }
 
   .maintenance-notice {
+    min-width: 0;
     padding: 12px;
   }
 }

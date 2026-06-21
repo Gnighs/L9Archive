@@ -1,6 +1,6 @@
 window.archiveManifest = {
   "station": "Orbital Archive Station L-9",
-  "generatedAt": "2026-06-21T13:42:56.852467+00:00",
+  "generatedAt": "2026-06-21T13:52:42.339790+00:00",
   "sections": [
     {
       "id": "languages",
