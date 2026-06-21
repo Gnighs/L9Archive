@@ -130,6 +130,10 @@ h1 {
   line-height: 0.95;
 }
 
+h1 span {
+  display: inline;
+}
+
 h2 {
   margin-bottom: 0;
   font-size: clamp(1.55rem, 3vw, 2.25rem);
@@ -150,9 +154,17 @@ h2 {
   padding-bottom: 44px;
 }
 
+.archive-shell > section {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .status-panel {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--line);
   background: rgba(16, 26, 23, 0.72);
   box-shadow: var(--shadow);
@@ -172,6 +184,8 @@ h2 {
 
 .status-panel strong {
   font-size: 1.1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .section-heading {
@@ -184,10 +198,14 @@ h2 {
 
 .section-grid {
   display: flex;
+  width: 100%;
+  min-width: 0;
   gap: 14px;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   padding: 0 0 12px;
   overscroll-behavior-inline: contain;
   scrollbar-color: var(--line-bright) rgba(16, 26, 23, 0.86);
@@ -266,6 +284,9 @@ h2 {
 }
 
 .document-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: rgba(16, 26, 23, 0.78);
@@ -295,11 +316,15 @@ h2 {
 
 .document-list {
   display: grid;
+  min-width: 0;
   gap: 10px;
 }
 
 .document-row {
   display: grid;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   grid-template-columns: minmax(120px, 0.8fr) minmax(0, 2fr) auto;
   gap: 16px;
   align-items: center;
@@ -334,10 +359,16 @@ h2 {
   min-width: 0;
 }
 
+.document-row > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .document-main strong,
 .document-main span,
 .document-id {
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .document-main span {
@@ -447,6 +478,10 @@ h2 {
     overflow-wrap: anywhere;
   }
 
+  h1 span {
+    display: block;
+  }
+
   h2 {
     font-size: 1.35rem;
   }
@@ -471,6 +506,9 @@ h2 {
   }
 
   .status-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     grid-template-columns: 1fr;
   }
 
@@ -500,6 +538,8 @@ h2 {
   }
 
   .section-grid {
+    width: 100%;
+    min-width: 0;
     gap: 10px;
     max-width: 100%;
     overflow-x: auto;
@@ -509,7 +549,8 @@ h2 {
   }
 
   .section-card {
-    flex-basis: calc(100vw - 42px);
+    flex: 0 0 calc(100vw - 42px);
+    max-width: calc(100vw - 42px);
     gap: 6px 10px;
     min-height: 0;
     padding: 12px;
@@ -547,6 +588,7 @@ h2 {
 
   .document-row {
     min-width: 0;
+    max-width: 100%;
     grid-template-columns: 1fr;
     align-items: start;
     min-height: 0;
