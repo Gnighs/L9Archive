@@ -5,10 +5,16 @@
     "id": "L9-LANGUAGES-SHASVIN-REFERENCE-GRAMMAR",
     "status": "Cleared"
   },
-    {
+  {
     "path": "files/Kupina_Hala_Reference_Grammar.pdf",
     "title": "Kupina Hala Reference Grammar",
     "id": "L9-LANGUAGES-KUPINA-HALA-REFERENCE-GRAMMAR",
+    "status": "Classified"
+  },
+  {
+    "path": "",
+    "title": "Hjotvaek Reference Grammar",
+    "id": "L9-LANGUAGES-HJOTVAEK-REFERENCE-GRAMMAR",
     "status": "Classified"
   }
 ]
