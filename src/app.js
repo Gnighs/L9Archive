@@ -97,8 +97,7 @@ function getFileReportItems() {
 
     return {
       label: item.label,
-      value: formatPercentage(count, total),
-      detail: `${count} of ${total} file${total === 1 ? "" : "s"}`,
+      value: `${formatPercentage(count, total)} (${count}/${total})`,
       className: item.className
     };
   });
