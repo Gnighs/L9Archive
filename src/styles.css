@@ -216,7 +216,7 @@ h2 {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y;
   padding: 0 0 12px;
   overscroll-behavior-inline: contain;
   scrollbar-color: var(--line-bright) rgba(16, 26, 23, 0.86);
@@ -585,6 +585,7 @@ h2 {
     gap: 6px 10px;
     min-height: 0;
     padding: 12px;
+    scroll-margin-top: 10px;
     scroll-snap-align: start;
   }
 

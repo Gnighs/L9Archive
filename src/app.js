@@ -7,6 +7,7 @@ const generationStamp = document.querySelector("#generation-stamp");
 
 const archiveManifest = window.archiveManifest;
 const sections = archiveManifest.sections;
+const mobileViewport = window.matchMedia("(max-width: 640px)");
 let activeSectionId = getInitialSectionId();
 
 function getInitialSectionId() {
@@ -51,12 +52,25 @@ function renderSections() {
       button.addEventListener("click", () => {
         activeSectionId = section.id;
         window.history.replaceState(null, "", `#${section.id}`);
-        render();
+        render({ scrollToActiveCard: mobileViewport.matches });
       });
 
       return button;
     })
   );
+}
+
+function scrollActiveCardIntoView() {
+  const activeCard = sectionGrid.querySelector('[data-active="true"]');
+  if (!activeCard) return;
+
+  window.requestAnimationFrame(() => {
+    activeCard.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+      inline: "nearest"
+    });
+  });
 }
 
 function documentRow(file, section) {
@@ -117,9 +131,13 @@ function renderDocuments() {
   );
 }
 
-function render() {
+function render({ scrollToActiveCard = false } = {}) {
   renderSections();
   renderDocuments();
+
+  if (scrollToActiveCard) {
+    scrollActiveCardIntoView();
+  }
 }
 
 generationStamp.textContent = formatTimestamp(archiveManifest.generatedAt);
