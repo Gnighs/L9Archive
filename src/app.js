@@ -66,7 +66,7 @@ function formatTimestamp(value) {
 }
 
 function getAllDocuments() {
-  return sections.flatMap((section) => section.documents);
+  return sections.reduce((documents, section) => documents.concat(section.documents), []);
 }
 
 function formatPercentage(count, total) {
@@ -105,7 +105,7 @@ function getFileReportItems() {
 }
 
 function renderSummary() {
-  summaryButtons.forEach((button) => {
+  Array.from(summaryButtons).forEach((button) => {
     const isActive = button.dataset.summaryView === activeSummaryView;
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
@@ -232,7 +232,7 @@ function render({ scrollToDirectory = false } = {}) {
 }
 
 generationStamp.textContent = formatTimestamp(archiveManifest.generatedAt);
-summaryButtons.forEach((button) => {
+Array.from(summaryButtons).forEach((button) => {
   button.addEventListener("click", () => {
     activeSummaryView = button.dataset.summaryView;
     renderSummary();

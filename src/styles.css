@@ -186,14 +186,19 @@ h2 {
 }
 
 .summary-switch button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
   min-height: 38px;
   padding: 0 14px;
   border: 0;
+  border-radius: 0;
   border-right: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.74rem;
+  line-height: 1;
   text-transform: uppercase;
   cursor: pointer;
 }
