@@ -1,6 +1,6 @@
 window.archiveManifest = {
   "station": "Orbital Archive Station L-9",
-  "generatedAt": "2026-06-21T18:47:50.962320+00:00",
+  "generatedAt": "2026-06-22T15:20:12.976831+00:00",
   "sections": [
     {
       "id": "languages",
@@ -84,13 +84,69 @@ window.archiveManifest = {
     {
       "id": "haptics",
       "title": "Haptics",
-      "description": "Station records filed under a newly opened archive heading.",
-      "status": "maintenance",
+      "description": "Complete scrolls, manuals, and guides on mastering haptic sound and light manipulation.",
+      "status": "available",
       "maintenanceLine": "INDEX UNDER MAINTENANCE",
       "emptyTitle": "Haptics records are not yet available through the public terminal.",
       "emptyMessage": "No public records are available through this terminal. Index reconstruction is pending curator clearance.",
-      "count": 0,
-      "documents": []
+      "count": 5,
+      "documents": [
+        {
+          "id": "L9-HAPTICS-HAPTICS-FOR-DUMMIES",
+          "title": "Haptics for Dummies",
+          "path": "",
+          "href": "",
+          "status": "Classified",
+          "className": "classified",
+          "statusLabel": "Classified",
+          "actionLabel": "PDF Unavailable",
+          "isAvailable": false
+        },
+        {
+          "id": "L9-HAPTICS-ADVANCED-SOUND-MANIPULATIONS",
+          "title": "Advanced Sound Manipulations",
+          "path": "",
+          "href": "",
+          "status": "Classified",
+          "className": "classified",
+          "statusLabel": "Classified",
+          "actionLabel": "PDF Unavailable",
+          "isAvailable": false
+        },
+        {
+          "id": "L9-HAPTICS-BEGINNERS-SCROLL-OF-SOUND-TRIANGULATION",
+          "title": "Beginner's Scroll of Sound Triangulation",
+          "path": "",
+          "href": "",
+          "status": "Classified",
+          "className": "classified",
+          "statusLabel": "Classified",
+          "actionLabel": "PDF Unavailable",
+          "isAvailable": false
+        },
+        {
+          "id": "L9-HAPTICS-MANUAL-OF-APPLIED-HAPTIC-LIGHT-BENDING",
+          "title": "Manual of Applied Haptic Light Bending",
+          "path": "",
+          "href": "",
+          "status": "Classified",
+          "className": "classified",
+          "statusLabel": "Classified",
+          "actionLabel": "PDF Unavailable",
+          "isAvailable": false
+        },
+        {
+          "id": "L9-HAPTICS-THE-HAPTIC-CODEX",
+          "title": "The Haptic Codex",
+          "path": "",
+          "href": "",
+          "status": "Classified",
+          "className": "classified",
+          "statusLabel": "Classified",
+          "actionLabel": "PDF Unavailable",
+          "isAvailable": false
+        }
+      ]
     },
     {
       "id": "miscellany",
