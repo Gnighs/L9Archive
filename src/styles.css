@@ -413,7 +413,7 @@ h2 {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 2fr) auto;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 2fr) minmax(120px, auto);
   gap: 16px;
   align-items: center;
   min-height: 74px;
@@ -489,6 +489,7 @@ h2 {
 
 .document-action {
   color: var(--line-bright);
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -727,6 +728,7 @@ h2 {
   }
 
   .document-action {
+    text-align: left;
     white-space: normal;
   }
 

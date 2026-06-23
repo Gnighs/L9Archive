@@ -1,6 +1,6 @@
 window.archiveManifest = {
   "station": "Orbital Archive Station L-9",
-  "generatedAt": "2026-06-22T15:20:12.976831+00:00",
+  "generatedAt": "2026-06-23T14:40:05.248194+00:00",
   "sections": [
     {
       "id": "languages",
@@ -13,18 +13,18 @@ window.archiveManifest = {
       "count": 3,
       "documents": [
         {
-          "id": "L9-LANGUAGES-SHASVIN-REFERENCE-GRAMMAR",
+          "id": "L9-LANGUAGES-882-J",
           "title": "Shasvin Reference Grammar",
           "path": "documents/languages/files/Shasvin_Reference_Grammar.pdf",
           "href": "../documents/languages/files/Shasvin_Reference_Grammar.pdf",
-          "status": "Cleared",
-          "className": "cleared",
-          "statusLabel": "Current Archive Copy",
+          "status": "InProgress",
+          "className": "in-progress",
+          "statusLabel": "Work In Progress",
           "actionLabel": "View PDF",
           "isAvailable": true
         },
         {
-          "id": "L9-LANGUAGES-KUPINA-HALA-REFERENCE-GRAMMAR",
+          "id": "L9-LANGUAGES-457-I",
           "title": "Kupina Hala Reference Grammar",
           "path": "documents/languages/files/Kupina_Hala_Reference_Grammar.pdf",
           "href": "",
@@ -35,7 +35,7 @@ window.archiveManifest = {
           "isAvailable": false
         },
         {
-          "id": "L9-LANGUAGES-HJOTVAEK-REFERENCE-GRAMMAR",
+          "id": "L9-LANGUAGES-023-U",
           "title": "Hjotvaek Reference Grammar",
           "path": "",
           "href": "",
@@ -58,15 +58,15 @@ window.archiveManifest = {
       "count": 1,
       "documents": [
         {
-          "id": "L9-BIOLOGY-THALASSOGIGANTIA-INSULARIS",
-          "title": "Thalassogigantia Insularis",
-          "path": "",
-          "href": "",
-          "status": "Classified",
-          "className": "classified",
-          "statusLabel": "Classified",
-          "actionLabel": "PDF Unavailable",
-          "isAvailable": false
+          "id": "L9-BIOLOGY-311-T",
+          "title": "<i>Thalassogigantia insuliformis</i>",
+          "path": "documents/biology/files/Tanayu_Monograph.pdf",
+          "href": "../documents/biology/files/Tanayu_Monograph.pdf",
+          "status": "Cleared",
+          "className": "cleared",
+          "statusLabel": "Current Archive Copy",
+          "actionLabel": "View PDF",
+          "isAvailable": true
         }
       ]
     },
