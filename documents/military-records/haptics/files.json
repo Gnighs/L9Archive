@@ -1,0 +1,35 @@
+{
+  "layout": "list",
+  "items": [
+    {
+      "path": "",
+      "title": "Haptics for Dummies",
+      "id": "HAPTICS-FOR-DUMMIES",
+      "status": "Classified"
+    },
+    {
+      "path": "",
+      "title": "Advanced Sound Manipulations",
+      "id": "ADVANCED-SOUND-MANIPULATIONS",
+      "status": "Classified"
+    },
+    {
+      "path": "",
+      "title": "Beginner's Scroll of Sound Triangulation",
+      "id": "BEGINNERS-SCROLL-OF-SOUND-TRIANGULATION",
+      "status": "Classified"
+    },
+    {
+      "path": "",
+      "title": "Manual of Applied Haptic Light Bending",
+      "id": "MANUAL-OF-APPLIED-HAPTIC-LIGHT-BENDING",
+      "status": "Classified"
+    },
+    {
+      "path": "",
+      "title": "The Haptic Codex",
+      "id": "THE-HAPTIC-CODEX",
+      "status": "Classified"
+    }
+  ]
+}

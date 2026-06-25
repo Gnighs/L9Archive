@@ -1,0 +1,31 @@
+{
+  "archiveCode": "L9",
+  "layout": "cards",
+  "defaultItemKind": "catalog",
+  "items": [
+    {
+      "id": "colonial-records",
+      "code": "COLO",
+      "includeCodeInDescendants": true,
+      "title": "Colonial Records",
+      "description": "Survey records organized by planet of origin.",
+      "status": "Cleared",
+      "kicker": "Planetary Directory",
+      "countLabel": "planetary archives",
+      "emptyTitle": "Colonial records are not available through this terminal.",
+      "emptyMessage": "No planetary archives have been indexed."
+    },
+    {
+      "id": "military-records",
+      "code": "MILI",
+      "includeCodeInDescendants": true,
+      "title": "Military Records",
+      "description": "Research and operational documents related to military activities.",
+      "status": "Cleared",
+      "kicker": "Military Directory",
+      "countLabel": "military archives",
+      "emptyTitle": "Military records are not available through this terminal.",
+      "emptyMessage": "No military indexes have been registered."
+    }
+  ]
+}

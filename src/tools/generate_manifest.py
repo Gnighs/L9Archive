@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
@@ -8,11 +9,18 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = SCRIPT_DIR.parent
 PROJECT_ROOT = SRC_DIR.parent
 DOCUMENTS_DIR = PROJECT_ROOT / "documents"
+ROOT_CATALOG_PATH = DOCUMENTS_DIR / "collections.json"
 OUTPUT_PATH = SRC_DIR / "archive-manifest.js"
-INDEXES_PATH = DOCUMENTS_DIR / "indexes.json"
+CATALOG_NAME = "catalog.json"
 FILES_CATALOG = "files.json"
 
-VALID_STATUSES = {"Cleared", "InProgress", "Classified"}
+SAFE_ID_PATTERN = re.compile(r"^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$")
+ARCHIVE_CODE_PATTERN = re.compile(r"^[A-Z0-9]+$")
+SHORT_FILE_ID_PATTERN = re.compile(r"^[A-Z0-9]+(?:-[A-Z0-9]+)*$")
+VALID_LAYOUTS = {"cards", "list"}
+VALID_KINDS = {"catalog", "index"}
+VALID_NAVIGABLE_STATUSES = {"Cleared", "Classified"}
+VALID_FILE_STATUSES = {"Cleared", "InProgress", "Classified"}
 STATUS_DETAILS = {
     "Cleared": {
         "className": "cleared",
@@ -32,7 +40,10 @@ STATUS_DETAILS = {
 }
 
 DEFAULT_EMPTY_WARNING = "INDEX UNDER MAINTENANCE"
-DEFAULT_EMPTY_MESSAGE = "No public records are available through this terminal. Index reconstruction is pending curator clearance."
+DEFAULT_EMPTY_MESSAGE = (
+    "No public records are available through this terminal. "
+    "Index reconstruction is pending curator clearance."
+)
 
 
 def title_from_slug(value):
@@ -40,9 +51,14 @@ def title_from_slug(value):
     return " ".join(word.capitalize() for word in normalized.split())
 
 
+def write_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
 def read_json(path, fallback):
     if not path.exists():
-        path.write_text(json.dumps(fallback, indent=2) + "\n", encoding="utf-8")
+        write_json(path, fallback)
         return fallback
 
     try:
@@ -51,88 +67,212 @@ def read_json(path, fallback):
         raise SystemExit(f"Invalid JSON in {path}: {error}") from error
 
 
-def default_index(folder):
-    title = title_from_slug(folder.name)
+def validate_layout(value, source):
+    layout = str(value or "cards")
+    if layout not in VALID_LAYOUTS:
+        raise SystemExit(
+            f"Invalid layout '{layout}' in {source}. Use cards or list."
+        )
+    return layout
+
+
+def validate_id(item_id, source, id_pattern=None):
+    if not SAFE_ID_PATTERN.fullmatch(item_id):
+        raise SystemExit(
+            f"Invalid id '{item_id}' in {source}. "
+            "Use letters, numbers, and single hyphens."
+        )
+    if id_pattern:
+        try:
+            matches = re.fullmatch(id_pattern, item_id)
+        except re.error as error:
+            raise SystemExit(f"Invalid idPattern in {source}: {error}") from error
+        if not matches:
+            raise SystemExit(
+                f"Invalid id '{item_id}' in {source}; it does not match {id_pattern}."
+            )
+
+
+def validate_archive_code(code, source):
+    if not ARCHIVE_CODE_PATTERN.fullmatch(code):
+        raise SystemExit(
+            f"Invalid archive code '{code}' in {source}. "
+            "Use uppercase letters and numbers without punctuation."
+        )
+
+
+def generated_code(item_id):
+    parts = re.findall(r"[A-Za-z0-9]+", item_id)
+    if not parts:
+        return ""
+    if len(parts) > 1:
+        compact = "".join(parts).upper()
+        if len(compact) <= 5:
+            return compact
+        return "".join(part[0] for part in parts).upper()
+    return parts[0][:4].upper()
+
+
+def archive_id(segments):
+    return "-".join(segments)
+
+
+def default_catalog(default_kind="index"):
+    return {
+        "layout": "cards",
+        "defaultItemKind": default_kind,
+        "items": [],
+    }
+
+
+def default_item(folder, kind, status):
     return {
         "id": folder.name,
-        "title": title,
-        "description": "Station records filed under a newly opened archive heading.",
-        "emptyWarning": DEFAULT_EMPTY_WARNING,
-        "emptyTitle": f"{title} records are not yet available through the public terminal.",
-        "emptyMessage": DEFAULT_EMPTY_MESSAGE,
+        "title": title_from_slug(folder.name),
+        "kind": kind,
+        "status": status,
+        "description": (
+            "Records unavailable."
+            if status == "Classified"
+            else "Station records filed under a newly opened archive heading."
+        ),
     }
 
 
-def ensure_indexes():
-    folders = sorted(
-        (
-            path for path in DOCUMENTS_DIR.iterdir()
-            if path.is_dir() and not path.name.startswith(".")
-        ),
-        key=lambda folder: folder.name.lower(),
+def load_catalog(folder, catalog_path, default_kind="index"):
+    raw_catalog = read_json(catalog_path, default_catalog(default_kind))
+    if not isinstance(raw_catalog, dict):
+        raise SystemExit(
+            f"{catalog_path} must contain an object with layout and items."
+        )
+
+    layout = validate_layout(raw_catalog.get("layout"), catalog_path)
+    catalog_default_kind = str(
+        raw_catalog.get("defaultItemKind") or default_kind
     )
+    if catalog_default_kind not in VALID_KINDS:
+        raise SystemExit(
+            f"Invalid defaultItemKind '{catalog_default_kind}' in {catalog_path}."
+        )
 
-    if not INDEXES_PATH.exists():
-        indexes = [default_index(folder) for folder in folders]
-        INDEXES_PATH.write_text(json.dumps(indexes, indent=2) + "\n", encoding="utf-8")
-        return indexes
+    default_status = str(raw_catalog.get("defaultItemStatus") or "Cleared")
+    if default_status not in VALID_NAVIGABLE_STATUSES:
+        raise SystemExit(
+            f"Invalid defaultItemStatus '{default_status}' in {catalog_path}. "
+            "Navigable items must use Cleared or Classified."
+        )
 
-    indexes = read_json(INDEXES_PATH, [])
-    if not isinstance(indexes, list):
-        raise SystemExit(f"{INDEXES_PATH} must contain a JSON list.")
+    items = raw_catalog.get("items", [])
+    if not isinstance(items, list):
+        raise SystemExit(f"{catalog_path} field 'items' must be a JSON list.")
 
     listed_ids = {
-        str(index.get("id"))
-        for index in indexes
-        if isinstance(index, dict) and index.get("id")
+        str(item.get("id"))
+        for item in items
+        if isinstance(item, dict) and item.get("id")
     }
-    missing_indexes = [
-        default_index(folder)
-        for folder in folders
-        if folder.name not in listed_ids
+    discovered = [
+        default_item(child, catalog_default_kind, default_status)
+        for child in sorted(folder.iterdir(), key=lambda path: path.name.lower())
+        if child.is_dir()
+        and not child.name.startswith(".")
+        and child.name not in listed_ids
     ]
-
-    if missing_indexes:
-        indexes.extend(missing_indexes)
-        INDEXES_PATH.write_text(json.dumps(indexes, indent=2) + "\n", encoding="utf-8")
-
-    return indexes
-
-
-def clean_index(raw_index):
-    if not isinstance(raw_index, dict) or not raw_index.get("id"):
-        raise SystemExit("Every item in documents/indexes.json must be an object with an id.")
-
-    index_id = str(raw_index["id"])
-    title = str(raw_index.get("title") or title_from_slug(index_id))
+    if discovered:
+        items.extend(discovered)
+        raw_catalog["items"] = items
+        write_json(catalog_path, raw_catalog)
 
     return {
-        "id": index_id,
-        "title": title,
-        "description": str(raw_index.get("description") or "Station records filed under a newly opened archive heading."),
-        "emptyWarning": str(raw_index.get("emptyWarning") or DEFAULT_EMPTY_WARNING),
-        "emptyTitle": str(raw_index.get("emptyTitle") or f"{title} records are not yet available through the public terminal."),
-        "emptyMessage": str(raw_index.get("emptyMessage") or DEFAULT_EMPTY_MESSAGE),
+        "layout": layout,
+        "archiveCode": raw_catalog.get("archiveCode"),
+        "defaultItemKind": catalog_default_kind,
+        "defaultItemStatus": default_status,
+        "idPattern": raw_catalog.get("idPattern"),
+        "items": items,
     }
 
 
-def ensure_files_catalog(folder):
-    path = folder / FILES_CATALOG
-    files = read_json(path, [])
-    if not isinstance(files, list):
-        raise SystemExit(f"{path} must contain a JSON list.")
+def clean_catalog_item(raw_item, catalog, source):
+    if not isinstance(raw_item, dict) or not raw_item.get("id"):
+        raise SystemExit(f"Every item in {source} must be an object with an id.")
 
-    return files
+    item_id = str(raw_item["id"]).strip()
+    validate_id(item_id, source, catalog["idPattern"])
+    kind = str(raw_item.get("kind") or catalog["defaultItemKind"])
+    status = str(raw_item.get("status") or catalog["defaultItemStatus"])
+    if kind not in VALID_KINDS:
+        raise SystemExit(f"Item '{item_id}' in {source} has invalid kind '{kind}'.")
+    if status not in VALID_NAVIGABLE_STATUSES:
+        raise SystemExit(
+            f"Item '{item_id}' in {source} has invalid status '{status}'. "
+            "Navigable items must use Cleared or Classified."
+        )
+
+    title = str(raw_item.get("title") or title_from_slug(item_id))
+    code = str(raw_item.get("code") or generated_code(item_id)).strip().upper()
+    validate_archive_code(code, source)
+    return {
+        "id": item_id,
+        "code": code,
+        "title": title,
+        "kind": kind,
+        "status": status,
+        "description": str(
+            raw_item.get("description")
+            or "Station records filed under a newly opened archive heading."
+        ),
+        "kicker": str(raw_item.get("kicker") or ""),
+        "countLabel": str(raw_item.get("countLabel") or ""),
+        "includeCodeInDescendants": bool(
+            raw_item.get("includeCodeInDescendants", True)
+        ),
+        "emptyWarning": str(
+            raw_item.get("emptyWarning") or DEFAULT_EMPTY_WARNING
+        ),
+        "emptyTitle": str(
+            raw_item.get("emptyTitle")
+            or f"{title} records are not yet available through the public terminal."
+        ),
+        "emptyMessage": str(
+            raw_item.get("emptyMessage") or DEFAULT_EMPTY_MESSAGE
+        ),
+        "unavailableMessage": str(
+            raw_item.get("unavailableMessage")
+            or "Classified"
+        ),
+    }
 
 
-def href_for(index_id, relative_path):
-    parts = ["..", "documents", index_id, *Path(relative_path).parts]
+def load_files(index_dir):
+    source = index_dir / FILES_CATALOG
+    raw_catalog = read_json(source, {"layout": "list", "items": []})
+    if not isinstance(raw_catalog, dict):
+        raise SystemExit(
+            f"{source} must contain an object with layout and items."
+        )
+    layout = validate_layout(raw_catalog.get("layout") or "list", source)
+    items = raw_catalog.get("items", [])
+    if not isinstance(items, list):
+        raise SystemExit(f"{source} field 'items' must be a JSON list.")
+    return layout, items
+
+
+def href_for(path_parts, relative_path):
+    parts = ["..", "documents", *path_parts, *Path(relative_path).parts]
     return "/".join(part if part == ".." else quote(part) for part in parts)
 
 
-def normalize_file(raw_file, index_id, folder):
+def normalize_file(
+    raw_file,
+    path_parts,
+    index_dir,
+    index_archive_id,
+    used_file_archive_ids,
+):
+    source = index_dir / FILES_CATALOG
     if not isinstance(raw_file, dict):
-        raise SystemExit(f"Every file item in {folder / FILES_CATALOG} must be an object.")
+        raise SystemExit(f"Every file item in {source} must be an object.")
 
     title = str(raw_file.get("title") or "").strip()
     record_id = str(raw_file.get("id") or "").strip()
@@ -140,59 +280,206 @@ def normalize_file(raw_file, index_id, folder):
     relative_path = str(raw_file.get("path") or "").strip()
 
     if not title:
-        raise SystemExit(f"A file item in {folder / FILES_CATALOG} is missing title.")
+        raise SystemExit(f"A file item in {source} is missing title.")
     if not record_id:
-        raise SystemExit(f"File '{title}' in {folder / FILES_CATALOG} is missing id.")
-    if status not in VALID_STATUSES:
-        raise SystemExit(f"File '{title}' in {folder / FILES_CATALOG} has invalid status '{status}'. Use Cleared, InProgress, or Classified.")
+        raise SystemExit(f"File '{title}' in {source} is missing id.")
+    if not SHORT_FILE_ID_PATTERN.fullmatch(record_id):
+        raise SystemExit(
+            f"File '{title}' in {source} has invalid short id '{record_id}'. "
+            "Use uppercase letters and numbers separated by hyphens."
+        )
+    if status not in VALID_FILE_STATUSES:
+        raise SystemExit(
+            f"File '{title}' in {source} has invalid status '{status}'. "
+            "Files must use Cleared, InProgress, or Classified."
+        )
 
     details = STATUS_DETAILS[status]
-    linked_file_exists = bool(relative_path) and (folder / relative_path).is_file()
+    linked_file_exists = bool(relative_path) and (index_dir / relative_path).is_file()
     is_available = linked_file_exists and status != "Classified"
+    document_path = (
+        "/".join(["documents", *path_parts, relative_path])
+        if relative_path
+        else ""
+    )
+    full_archive_id = f"{index_archive_id}-{record_id}"
+    if full_archive_id in used_file_archive_ids:
+        raise SystemExit(
+            f"Duplicate generated file archive id '{full_archive_id}' in {source}."
+        )
+    used_file_archive_ids.add(full_archive_id)
 
     return {
         "id": record_id,
+        "archiveId": full_archive_id,
         "title": title,
-        "path": f"documents/{index_id}/{relative_path}" if relative_path else "",
-        "href": href_for(index_id, relative_path) if is_available else "",
+        "path": document_path,
+        "href": href_for(path_parts, relative_path) if is_available else "",
         "status": status,
         "className": details["className"],
         "statusLabel": details["statusLabel"],
-        "actionLabel": details["actionLabel"] if is_available else "PDF Unavailable",
+        "actionLabel": details["actionLabel"]
+        if is_available
+        else "PDF Unavailable",
         "isAvailable": is_available,
     }
 
 
+def build_index(
+    item,
+    item_dir,
+    path_parts,
+    item_archive_id,
+    used_file_archive_ids,
+):
+    item_dir.mkdir(parents=True, exist_ok=True)
+    (item_dir / "files").mkdir(exist_ok=True)
+    layout, raw_files = load_files(item_dir)
+    documents = [
+        normalize_file(
+            raw_file,
+            path_parts,
+            item_dir,
+            item_archive_id,
+            used_file_archive_ids,
+        )
+        for raw_file in raw_files
+    ]
+    accessible = item["status"] != "Classified"
+    details = STATUS_DETAILS[item["status"]]
+    availability = (
+        "classified"
+        if not accessible
+        else "available"
+        if documents
+        else "maintenance"
+    )
+
+    return {
+        **item,
+        "archiveId": item_archive_id,
+        "className": details["className"],
+        "isAccessible": accessible,
+        "layout": layout,
+        "count": len(documents),
+        "availability": availability,
+        "documents": documents if accessible else [],
+    }
+
+
+def build_catalog(
+    folder,
+    catalog_path,
+    path_parts,
+    default_kind="index",
+    archive_prefix=None,
+    used_archive_ids=None,
+    used_file_archive_ids=None,
+):
+    catalog = load_catalog(folder, catalog_path, default_kind)
+    if used_archive_ids is None:
+        used_archive_ids = set()
+    if used_file_archive_ids is None:
+        used_file_archive_ids = set()
+    if archive_prefix is None:
+        root_code = str(catalog["archiveCode"] or "L9").strip().upper()
+        validate_archive_code(root_code, catalog_path)
+        archive_prefix = [root_code]
+
+    items = []
+    seen_ids = set()
+    seen_codes = set()
+
+    for raw_item in catalog["items"]:
+        item = clean_catalog_item(raw_item, catalog, catalog_path)
+        if item["id"] in seen_ids:
+            raise SystemExit(f"Duplicate id '{item['id']}' in {catalog_path}.")
+        seen_ids.add(item["id"])
+        if item["code"] in seen_codes:
+            raise SystemExit(
+                f"Duplicate generated code '{item['code']}' in {catalog_path}. "
+                "Add a code override to one of the colliding items."
+            )
+        seen_codes.add(item["code"])
+
+        item_dir = folder / item["id"]
+        item_path = [*path_parts, item["id"]]
+        item_archive_id = archive_id([*archive_prefix, item["code"]])
+        if item_archive_id in used_archive_ids:
+            raise SystemExit(
+                f"Duplicate generated archive id '{item_archive_id}' in {catalog_path}."
+            )
+        used_archive_ids.add(item_archive_id)
+
+        if item["kind"] == "index":
+            built_item = build_index(
+                item,
+                item_dir,
+                item_path,
+                item_archive_id,
+                used_file_archive_ids,
+            )
+        else:
+            item_dir.mkdir(parents=True, exist_ok=True)
+            child_prefix = (
+                [*archive_prefix, item["code"]]
+                if item["includeCodeInDescendants"]
+                else archive_prefix
+            )
+            child = build_catalog(
+                item_dir,
+                item_dir / CATALOG_NAME,
+                item_path,
+                default_kind="index",
+                archive_prefix=child_prefix,
+                used_archive_ids=used_archive_ids,
+                used_file_archive_ids=used_file_archive_ids,
+            )
+            accessible = item["status"] != "Classified"
+            details = STATUS_DETAILS[item["status"]]
+            availability = (
+                "classified"
+                if not accessible
+                else "available"
+                if child["items"]
+                else "maintenance"
+            )
+            built_item = {
+                **item,
+                "archiveId": item_archive_id,
+                "className": details["className"],
+                "isAccessible": accessible,
+                "availability": availability,
+                "layout": child["layout"],
+                "count": len(child["items"]) if accessible else None,
+                "items": child["items"] if accessible else [],
+            }
+        items.append(built_item)
+
+    return {
+        "archiveId": archive_id(archive_prefix),
+        "layout": catalog["layout"],
+        "items": items,
+    }
+
+
 def build_manifest():
-    sections = []
-
-    for raw_index in ensure_indexes():
-        index = clean_index(raw_index)
-        folder = DOCUMENTS_DIR / index["id"]
-        folder.mkdir(exist_ok=True)
-        (folder / "files").mkdir(exist_ok=True)
-        raw_files = ensure_files_catalog(folder)
-        documents = [
-            normalize_file(raw_file, index["id"], folder)
-            for raw_file in raw_files
-        ]
-
-        sections.append({
-            "id": index["id"],
-            "title": index["title"],
-            "description": index["description"],
-            "status": "available" if documents else "maintenance",
-            "maintenanceLine": index["emptyWarning"],
-            "emptyTitle": index["emptyTitle"],
-            "emptyMessage": index["emptyMessage"],
-            "count": len(documents),
-            "documents": documents,
-        })
-
+    root = build_catalog(
+        DOCUMENTS_DIR,
+        ROOT_CATALOG_PATH,
+        [],
+        default_kind="catalog",
+    )
     return {
         "station": "Orbital Archive Station L-9",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "sections": sections,
+        "root": {
+            "id": "archive",
+            "archiveId": root["archiveId"],
+            "title": "Archive Divisions",
+            "kicker": "Directory",
+            **root,
+        },
     }
 
 
@@ -202,7 +489,10 @@ def main():
         f"window.archiveManifest = {json.dumps(manifest, indent=2)};\n",
         encoding="utf-8",
     )
-    print(f"Generated {OUTPUT_PATH.relative_to(PROJECT_ROOT)} with {len(manifest['sections'])} sections.")
+    print(
+        f"Generated {OUTPUT_PATH.relative_to(PROJECT_ROOT)} "
+        f"with {len(manifest['root']['items'])} top-level collections."
+    )
 
 
 if __name__ == "__main__":

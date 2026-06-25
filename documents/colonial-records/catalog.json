@@ -1,0 +1,92 @@
+{
+  "layout": "list",
+  "defaultItemKind": "catalog",
+  "defaultItemStatus": "Classified",
+  "idPattern": "^[A-Z]{2}-[0-9]{2}[A-Z]$",
+  "items": [
+    {
+      "id": "AB-16A",
+      "title": "AB-16A",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "AR-29G",
+      "title": "AR-29G",
+      "status": "Cleared",
+      "description": "Partial public clearance.",
+      "unavailableMessage": "Records unavailable."
+    },
+    {
+      "id": "QV-03M",
+      "title": "QV-03M",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "HX-71C",
+      "title": "HX-71C",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "JL-44R",
+      "title": "JL-44R",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "NE-08B",
+      "title": "NE-08B",
+      "status": "Cleared",
+      "description": "Partial public clearance.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "PK-63F",
+      "title": "PK-63F",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "DS-20W",
+      "title": "DS-20W",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "YM-92E",
+      "title": "YM-92E",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "CF-37K",
+      "title": "CF-37K",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "UG-55N",
+      "title": "UG-55N",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    },
+    {
+      "id": "ZX-11P",
+      "title": "ZX-11P",
+      "status": "Classified",
+      "description": "Records unavailable.",
+      "unavailableMessage": "Classified"
+    }
+  ]
+}

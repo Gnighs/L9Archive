@@ -1,0 +1,16 @@
+{
+  "layout": "cards",
+  "defaultItemKind": "index",
+  "items": [
+    {
+      "id": "haptics",
+      "code": "HAPT",
+      "title": "Haptics",
+      "status": "Cleared",
+      "description": "Complete scrolls, manuals, and guides on mastering haptic sound and light manipulation.",
+      "emptyWarning": "INDEX UNDER MAINTENANCE",
+      "emptyTitle": "Haptics records are not yet available through the public terminal.",
+      "emptyMessage": "No public records are available through this terminal. Index reconstruction is pending curator clearance."
+    }
+  ]
+}

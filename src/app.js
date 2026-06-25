@@ -1,5 +1,7 @@
-const sectionGrid = document.querySelector("#section-grid");
-const directorySection = document.querySelector("[aria-labelledby='sections-title']");
+const directorySection = document.querySelector("#directory-section");
+const directoryGrid = document.querySelector("#section-grid");
+const directoryKicker = document.querySelector("#directory-kicker");
+const directoryTitle = document.querySelector("#sections-title");
 const documentPanel = document.querySelector("#document-panel");
 const documentList = document.querySelector("#document-list");
 const documentsTitle = document.querySelector("#documents-title");
@@ -7,57 +9,30 @@ const activeSectionKicker = document.querySelector("#active-section-kicker");
 const generationStamp = document.querySelector("#generation-stamp");
 const statusPanel = document.querySelector("#status-panel");
 const summaryButtons = document.querySelectorAll("[data-summary-view]");
+const navigationBar = document.querySelector("#navigation-bar");
+const breadcrumbs = document.querySelector("#breadcrumbs");
+const backButton = document.querySelector("#back-button");
 
 const archiveManifest = window.archiveManifest;
-const sections = archiveManifest.sections;
+const rootCatalog = archiveManifest.root;
 const mobileViewport = window.matchMedia("(max-width: 640px)");
 let activeSummaryView = "station";
-let activeSectionId = getInitialSectionId();
 
 const stationStatusItems = [
-  {
-    label: "Archival Integrity",
-    value: "Moderate"
-  },
-  {
-    label: "Clearance",
-    value: "Public-ish"
-  },
-  {
-    label: "Interface Language",
-    value: "Senate Standard Shasvin"
-  }
+  { label: "Archival Integrity", value: "Moderate" },
+  { label: "Clearance", value: "Public-ish" },
+  { label: "Interface Language", value: "Senate Standard Shasvin" }
 ];
 
 const fileStatusItems = [
-  {
-    label: "Cleared Files",
-    status: "Cleared",
-    className: "cleared"
-  },
-  {
-    label: "In Progress Files",
-    status: "InProgress",
-    className: "in-progress"
-  },
-  {
-    label: "Classified Files",
-    status: "Classified",
-    className: "classified"
-  }
+  { label: "Cleared Files", status: "Cleared", className: "cleared" },
+  { label: "In Progress Files", status: "InProgress", className: "in-progress" },
+  { label: "Classified Files", status: "Classified", className: "classified" }
 ];
-
-function getInitialSectionId() {
-  const hash = window.location.hash.replace(/^#/, "");
-  if (sections.some((section) => section.id === hash)) return hash;
-
-  return null;
-}
 
 function formatTimestamp(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-
   return `Index refreshed ${date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -65,36 +40,32 @@ function formatTimestamp(value) {
   })}`;
 }
 
-function getAllDocuments() {
-  return sections.reduce((documents, section) => documents.concat(section.documents), []);
+function collectDocuments(node) {
+  if (node.kind === "index") return node.documents;
+  return (node.items ?? []).flatMap(collectDocuments);
 }
 
 function formatPercentage(count, total) {
   if (total === 0) return "0%";
-
   return `${Math.round((count / total) * 100)}%`;
 }
 
 function renderStatusItem({ label, value, detail, className = "" }) {
   const item = document.createElement("div");
   if (className) item.className = className;
-
   item.innerHTML = `
     <span class="status-label">${label}</span>
     <strong>${value}</strong>
     ${detail ? `<span class="status-detail">${detail}</span>` : ""}
   `;
-
   return item;
 }
 
 function getFileReportItems() {
-  const documents = getAllDocuments();
+  const documents = collectDocuments(rootCatalog);
   const total = documents.length;
-
   return fileStatusItems.map((item) => {
     const count = documents.filter((document) => document.status === item.status).length;
-
     return {
       label: item.label,
       value: `${formatPercentage(count, total)} (${count}/${total})`,
@@ -108,64 +79,219 @@ function renderSummary() {
     const isActive = button.dataset.summaryView === activeSummaryView;
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
-
   const items = activeSummaryView === "files" ? getFileReportItems() : stationStatusItems;
   statusPanel.replaceChildren(...items.map(renderStatusItem));
 }
 
-function renderSections() {
-  sectionGrid.replaceChildren(
-    ...sections.map((section) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `section-card ${section.status}`;
-      button.dataset.active = section.id === activeSectionId ? "true" : "false";
-      button.setAttribute("aria-pressed", section.id === activeSectionId ? "true" : "false");
+function normalizeHash(hash) {
+  const normalized = hash.replace(/^#\/?/, "").replace(/\/+$/, "");
+  try {
+    return decodeURIComponent(normalized);
+  } catch {
+    return "";
+  }
+}
 
-      const status = section.status === "available" ? `${section.count} file${section.count === 1 ? "" : "s"} indexed` : section.maintenanceLine;
+function legacyPath(parts) {
+  if (parts[0] === "planetary") return ["colonial-records"];
+  if (parts[0] === "planet" && parts[1]) {
+    return ["colonial-records", parts[1], ...parts.slice(2)];
+  }
+  if (parts[0] === "general") return ["general", ...parts.slice(1)];
+  return null;
+}
 
-      button.innerHTML = `
-        <span class="card-topline">
-          <span>${section.id.toUpperCase()}</span>
-          <span>${section.status === "available" ? "FOLDER" : "MAINT"}</span>
-        </span>
-        <strong>${section.title}</strong>
-        <span class="card-copy">${section.description}</span>
-        <span class="card-status">${status}</span>
-      `;
+function resolvePath(path) {
+  let node = rootCatalog;
+  const ancestors = [];
 
-      button.addEventListener("click", () => {
-        activeSectionId = section.id;
-        window.history.replaceState(null, "", `#${section.id}`);
-        render({ scrollToDirectory: mobileViewport.matches });
-      });
+  for (const segment of path) {
+    if (!node.items) return null;
+    const next = node.items.find((item) => item.id === segment);
+    if (!next || !next.isAccessible) return null;
+    ancestors.push(node);
+    node = next;
+  }
 
-      return button;
+  return { node, ancestors, path };
+}
+
+function getRoute() {
+  const parts = normalizeHash(window.location.hash).split("/").filter(Boolean);
+  if (parts.length === 0) return { node: rootCatalog, ancestors: [], path: [] };
+
+  const path = parts[0] === "browse" ? parts.slice(1) : legacyPath(parts);
+  const candidate = path ?? [];
+  for (let length = candidate.length; length >= 0; length -= 1) {
+    const route = resolvePath(candidate.slice(0, length));
+    if (route) return route;
+  }
+  return { node: rootCatalog, ancestors: [], path: [] };
+}
+
+function pathHash(path) {
+  return path.length ? `browse/${path.join("/")}` : "";
+}
+
+function navigate(path) {
+  window.location.hash = pathHash(path);
+}
+
+function itemStatus(item) {
+  if (!item.isAccessible) return item.unavailableMessage;
+  if (item.availability === "maintenance") return item.emptyWarning;
+  if (item.kind === "index") {
+    return `${item.count} file${item.count === 1 ? "" : "s"} indexed`;
+  }
+  let countLabel = item.countLabel || "entries";
+  if (item.count === 1) {
+    if (countLabel.endsWith("ies")) countLabel = `${countLabel.slice(0, -3)}y`;
+    else if (countLabel.endsWith("xes")) countLabel = countLabel.slice(0, -2);
+    else if (countLabel.endsWith("s")) countLabel = countLabel.slice(0, -1);
+  }
+  return `${item.count} ${countLabel} indexed`;
+}
+
+function itemAction(item) {
+  if (!item.isAccessible) return "Records Unavailable";
+  return item.kind === "index" ? "Open Index" : "Open Directory";
+}
+
+function createCatalogCard(item, path) {
+  const card = document.createElement(item.isAccessible ? "button" : "article");
+  card.className = `section-card ${item.className} ${item.availability ?? ""}`.trim();
+
+  if (item.isAccessible) {
+    card.type = "button";
+    card.addEventListener("click", () => navigate(path));
+  } else {
+    card.setAttribute("aria-disabled", "true");
+  }
+
+  card.innerHTML = `
+    <span class="card-topline">
+      <span>${item.archiveId}</span>
+      <span>${item.kind === "index" ? "INDEX" : "DIRECTORY"}</span>
+    </span>
+    <strong>${item.title}</strong>
+    <span class="card-copy">${item.description}</span>
+    <span class="card-status">${itemStatus(item)}</span>
+  `;
+  return card;
+}
+
+function createCatalogRow(item, path) {
+  const row = document.createElement(item.isAccessible ? "button" : "article");
+  row.className = `catalog-row ${item.className} ${item.availability ?? ""}`.trim();
+
+  if (item.isAccessible) {
+    row.type = "button";
+    row.addEventListener("click", () => navigate(path));
+  } else {
+    row.setAttribute("aria-disabled", "true");
+  }
+
+  row.innerHTML = `
+    <span class="document-id">${item.archiveId}</span>
+    <span class="document-main">
+      <strong>${item.title}</strong>
+      <span>${item.description}</span>
+    </span>
+    <span class="catalog-status">
+      <strong>${itemStatus(item)}</strong>
+      <span class="document-action">${itemAction(item)}</span>
+    </span>
+  `;
+  return row;
+}
+
+function emptyCatalogNotice(node) {
+  const article = document.createElement("article");
+  article.className = "maintenance-notice";
+  article.innerHTML = `
+    <span>${node.emptyWarning ?? "DIRECTORY UNDER MAINTENANCE"}</span>
+    <strong>${node.emptyTitle ?? "No public entries are available."}</strong>
+    <p>${node.emptyMessage ?? "Index reconstruction is pending curator clearance."}</p>
+  `;
+  return article;
+}
+
+function breadcrumbData(route) {
+  const nodes = [rootCatalog, ...route.ancestors.slice(1), route.node];
+  const seen = [];
+  return nodes.map((node, index) => {
+    if (index > 0) seen.push(route.path[index - 1]);
+    return {
+      label: node.title,
+      path: index === nodes.length - 1 ? undefined : [...seen]
+    };
+  });
+}
+
+function renderBreadcrumbs(route) {
+  const isHome = route.path.length === 0;
+  navigationBar.hidden = isHome;
+  if (isHome) {
+    breadcrumbs.replaceChildren();
+    return;
+  }
+
+  backButton.onclick = () => navigate(route.path.slice(0, -1));
+  const crumbs = breadcrumbData(route);
+  breadcrumbs.replaceChildren(
+    ...crumbs.flatMap((crumb, index) => {
+      const items = [];
+      if (index > 0) {
+        const separator = document.createElement("span");
+        separator.className = "breadcrumb-separator";
+        separator.textContent = "/";
+        separator.setAttribute("aria-hidden", "true");
+        items.push(separator);
+      }
+
+      if (crumb.path) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = crumb.label;
+        button.addEventListener("click", () => navigate(crumb.path));
+        items.push(button);
+      } else {
+        const current = document.createElement("span");
+        current.textContent = crumb.label;
+        current.setAttribute("aria-current", "page");
+        items.push(current);
+      }
+      return items;
     })
   );
 }
 
-function scrollDirectoryIntoView() {
-  if (!directorySection) return;
+function renderDirectory(route) {
+  const node = route.node;
+  const isCatalog = node.kind !== "index";
+  directorySection.hidden = !isCatalog;
+  if (!isCatalog) return;
 
-  window.requestAnimationFrame(() => {
-    const directoryTop = directorySection.getBoundingClientRect().top;
-    const scrollMargin = 10;
-    const targetTop = window.scrollY + directoryTop - scrollMargin;
+  directoryKicker.textContent = node.kicker || (route.path.length ? "Directory" : "Archive Directory");
+  directoryTitle.textContent = node.title;
+  directoryGrid.className = `section-grid layout-${node.layout}`;
 
-    if (targetTop <= window.scrollY) return;
-
-    window.scrollTo({
-      top: targetTop,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+  if (!node.items.length) {
+    directoryGrid.replaceChildren(emptyCatalogNotice(node));
+  } else {
+    const entries = node.items.map((item) => {
+      const path = [...route.path, item.id];
+      return node.layout === "list"
+        ? createCatalogRow(item, path)
+        : createCatalogCard(item, path);
     });
-  });
+    directoryGrid.replaceChildren(...entries);
+  }
 }
 
-function documentRow(file, section) {
+function documentRow(file) {
   const row = document.createElement(file.isAvailable ? "a" : "article");
-  row.className = `document-row ${file.className ?? "cleared"} ${file.isAvailable ? "available" : "unavailable"}`;
-
+  row.className = `document-row ${file.className} ${file.isAvailable ? "available" : "unavailable"}`;
   if (file.isAvailable) {
     row.href = file.href;
     row.target = "_blank";
@@ -173,61 +299,98 @@ function documentRow(file, section) {
   } else {
     row.setAttribute("aria-disabled", "true");
   }
-
   row.innerHTML = `
-    <span class="document-id">${file.id}</span>
+    <span class="document-id">${file.archiveId}</span>
     <span class="document-main">
       <strong>${file.title}</strong>
-      <span>${file.statusLabel ?? "Current Archive Copy"}</span>
+      <span>${file.statusLabel}</span>
     </span>
-    <span class="document-action">${file.actionLabel ?? "View PDF"}</span>
+    <span class="document-action">${file.actionLabel}</span>
   `;
-
   return row;
 }
 
-function maintenanceNotice(section) {
+function documentCard(file) {
+  const card = document.createElement(file.isAvailable ? "a" : "article");
+  card.className = `section-card document-card ${file.className}`.trim();
+  if (file.isAvailable) {
+    card.href = file.href;
+    card.target = "_blank";
+    card.rel = "noopener";
+  } else {
+    card.setAttribute("aria-disabled", "true");
+  }
+  card.innerHTML = `
+    <span class="card-topline">
+      <span>${file.archiveId}</span>
+      <span>FILE</span>
+    </span>
+    <strong>${file.title}</strong>
+    <span class="card-copy">${file.statusLabel}</span>
+    <span class="card-status">${file.actionLabel}</span>
+  `;
+  return card;
+}
+
+function maintenanceNotice(index) {
   const article = document.createElement("article");
   article.className = "maintenance-notice";
   article.innerHTML = `
-    <span>${section.maintenanceLine}</span>
-    <strong>${section.emptyTitle}</strong>
-    <p>${section.emptyMessage}</p>
+    <span>${index.emptyWarning}</span>
+    <strong>${index.emptyTitle}</strong>
+    <p>${index.emptyMessage}</p>
   `;
   return article;
 }
 
-function renderDocuments() {
-  const activeSection = sections.find((section) => section.id === activeSectionId);
-
-  if (!activeSection) {
+function renderDocuments(route) {
+  const index = route.node;
+  if (index.kind !== "index") {
     documentPanel.hidden = true;
     documentList.replaceChildren();
     return;
   }
 
   documentPanel.hidden = false;
-  documentsTitle.textContent = activeSection.title;
-  activeSectionKicker.textContent = activeSection.status === "available" ? "Open Index" : "Restricted Index";
+  documentsTitle.textContent = index.title;
+  activeSectionKicker.textContent =
+    index.availability === "available" ? "Open Index" : "Index Under Maintenance";
+  documentList.className = `document-list layout-${index.layout}`;
 
-  if (activeSection.documents.length === 0) {
-    documentList.replaceChildren(maintenanceNotice(activeSection));
+  if (!index.documents.length) {
+    documentList.replaceChildren(maintenanceNotice(index));
     return;
   }
 
   documentList.replaceChildren(
-    ...activeSection.documents.map((document) => documentRow(document, activeSection))
+    ...index.documents.map(index.layout === "cards" ? documentCard : documentRow)
   );
 }
 
-function render({ scrollToDirectory = false } = {}) {
-  renderSummary();
-  renderSections();
-  renderDocuments();
+function scrollActiveViewIntoPlace() {
+  const target = documentPanel.hidden ? directorySection : documentPanel;
+  if (!target) return;
+  window.requestAnimationFrame(() => {
+    const targetTop = window.scrollY + target.getBoundingClientRect().top - 10;
+    if (targetTop <= window.scrollY) return;
+    window.scrollTo({
+      top: targetTop,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    });
+  });
+}
 
-  if (scrollToDirectory) {
-    scrollDirectoryIntoView();
-  }
+function render() {
+  const route = getRoute();
+  renderSummary();
+  renderBreadcrumbs(route);
+  renderDirectory(route);
+  renderDocuments(route);
+}
+
+function handleHashChange() {
+  render();
+  if (mobileViewport.matches) scrollActiveViewIntoPlace();
 }
 
 generationStamp.textContent = formatTimestamp(archiveManifest.generatedAt);
@@ -237,4 +400,5 @@ Array.from(summaryButtons).forEach((button) => {
     renderSummary();
   });
 });
+window.addEventListener("hashchange", handleHashChange);
 render();
